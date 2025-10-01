@@ -33,3 +33,28 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "auth_token" {
+  description = "Auth token for Redis authentication"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "backup_retention_days" {
+  description = "Number of days to retain snapshots"
+  type        = number
+  default     = 5
+}
+
+variable "backup_window" {
+  description = "Daily time range for backups in UTC (HH:MM-HH:MM)"
+  type        = string
+  default     = "03:00-05:00"
+}
+
+variable "maintenance_window" {
+  description = "Weekly time range for maintenance in UTC (ddd:HH:MM-ddd:HH:MM)"
+  type        = string
+  default     = "sun:05:00-sun:09:00"
+}
