@@ -8,35 +8,35 @@ help: ## Show this help message
 
 ## Development
 dev-setup: ## Set up local development environment
-	docker-compose up -d postgres redis
+	docker compose up -d postgres redis
 	@echo "Waiting for services to be ready..."
 	@sleep 10
-	docker-compose --profile migration run --rm flyway migrate
+	docker compose --profile migration run --rm flyway migrate
 	@echo "Development environment ready!"
 
 dev-start: ## Start all services including app
-	docker-compose --profile app up -d
+	docker compose --profile app up -d
 
 dev-stop: ## Stop all services
-	docker-compose --profile app down
+	docker compose --profile app down
 
 dev-logs: ## Show logs from all services
-	docker-compose --profile app logs -f
+	docker compose --profile app logs -f
 
 dev-reset: ## Reset development environment
-	docker-compose down -v
+	docker compose down -v
 	make dev-setup
 
 ## Database
 migrate: ## Run database migrations
-	docker-compose --profile migration run --rm flyway migrate
+	docker compose --profile migration run --rm flyway migrate
 
 migrate-info: ## Check migration status
-	docker-compose --profile migration run --rm flyway info
+	docker compose --profile migration run --rm flyway info
 
 migrate-reset: ## Reset database (DESTRUCTIVE - dev only)
-	docker-compose --profile migration run --rm flyway clean
-	docker-compose --profile migration run --rm flyway migrate
+	docker compose --profile migration run --rm flyway clean
+	docker compose --profile migration run --rm flyway migrate
 
 ## Go Development
 deps: ## Download and tidy dependencies
