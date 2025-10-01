@@ -26,10 +26,32 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
-	// Initialize database
+	// Initialize database (with graceful fallback for development)
 	db, err := repository.NewPostgresDB(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Printf("Warning: Failed to connect to database: %v", err)
+		log.Printf("Running in degraded mode - only health endpoint available")
+
+		// Setup basic router for health check only
+		r := gin.Default()
+		r.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"status": "degraded",
+				"service": "url-shortener",
+				"database": "disconnected",
+			})
+		})
+
+		srv := &http.Server{
+			Addr:         ":" + cfg.Port,
+			Handler:      r,
+			ReadTimeout:  15 * time.Second,
+			WriteTimeout: 15 * time.Second,
+		}
+
+		log.Printf("Server starting on port %s (degraded mode)", cfg.Port)
+		log.Fatal(srv.ListenAndServe())
+		return
 	}
 	defer db.Close()
 
