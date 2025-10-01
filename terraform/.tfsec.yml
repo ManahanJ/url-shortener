@@ -1,0 +1,112 @@
+# tfsec configuration for URL Shortener project
+# Security scanning rules and exclusions
+
+severity_overrides:
+  # Override severities for specific checks
+  AWS002: HIGH    # Ensure VPC flow logging is enabled
+  AWS017: HIGH    # Ensure the S3 bucket has access logging configured
+  AWS077: HIGH    # Ensure RDS instances have logging enabled
+
+exclude_paths:
+  - "**/.terraform/**"
+  - "**/terraform.tfstate*"
+
+exclude_checks:
+  # Temporarily exclude checks during development
+  # Remove these exclusions before production deployment
+
+  # AWS001 - S3 bucket has an access logging configuration
+  # Excluded for dev environment where access logging is not critical
+  # TODO: Enable for production
+  - AWS001
+
+  # AWS018 - S3 bucket has MFA delete enabled
+  # Not applicable for automated backup scenarios
+  - AWS018
+
+custom_checks:
+  # Custom security rules specific to our URL shortener
+  - id: URL_SHORTENER_001
+    description: "Ensure all database instances are in private subnets"
+    impact: "Database could be accessible from the internet"
+    resolution: "Place database instances in private subnets only"
+    provider: aws
+    service: rds
+    severity: HIGH
+
+# Minimum severity level to report
+minimum_severity: MEDIUM
+
+# Output format options
+format: json
+soft_fail: false
+
+# Include additional metadata in output
+include_ignored: true
+include_passed: false
+
+# Configure specific AWS checks
+aws:
+  # RDS specific checks
+  rds:
+    # Enforce encryption at rest
+    encryption_at_rest: true
+    # Require backup retention > 7 days for production
+    backup_retention_minimum: 7
+    # Require Multi-AZ for production
+    multi_az_required: false # Set to true for prod environment
+
+  # S3 specific checks
+  s3:
+    # Block public access by default
+    block_public_access: true
+    # Require versioning for important buckets
+    versioning_required: true
+
+  # VPC specific checks
+  vpc:
+    # Require flow logs
+    flow_logs_required: true
+    # No default security groups with wide access
+    default_sg_locked: true
+
+  # IAM specific checks
+  iam:
+    # No overly permissive policies
+    wildcard_action_policy_documents: false
+    # Require MFA for sensitive operations
+    mfa_required_for_sensitive_operations: true
+
+  # ElastiCache specific checks
+  elasticache:
+    # Encryption at rest and in transit
+    encryption_at_rest: true
+    encryption_in_transit: true
+
+  # Lambda specific checks
+  lambda:
+    # No environment variables with secrets
+    environment_secrets: false
+    # Require IAM roles (no resource-based policies)
+    resource_based_policy: false
+
+# Development vs Production rules
+environment_specific:
+  dev:
+    # More lenient rules for development
+    ignore_checks:
+      - AWS002  # VPC flow logging (not needed in dev)
+      - AWS077  # Detailed monitoring (cost optimization in dev)
+
+  staging:
+    # Moderate security for staging
+    ignore_checks:
+      - AWS002  # VPC flow logging (optional in staging)
+
+  prod:
+    # Strict security for production
+    ignore_checks: []
+    additional_checks:
+      - AWS002  # Mandatory VPC flow logging
+      - AWS077  # Mandatory detailed monitoring
+      - AWS017  # Mandatory access logging
