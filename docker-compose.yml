@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:15.4
+    container_name: url_shortener_db
+    environment:
+      POSTGRES_DB: urlshortener
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - url_shortener_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: url_shortener_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - url_shortener_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flyway:
+    image: flyway/flyway:9.22
+    container_name: url_shortener_flyway
+    volumes:
+      - ./migrations:/flyway/sql
+      - ./flyway.conf:/flyway/conf/flyway.conf
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - url_shortener_network
+    profiles:
+      - migration
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: url_shortener_app
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:localdev123@postgres:5432/urlshortener?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - url_shortener_network
+    profiles:
+      - app
+    volumes:
+      - .:/app
+    working_dir: /app
+
+volumes:
+  postgres_data:
+
+networks:
+  url_shortener_network:
+    driver: bridge

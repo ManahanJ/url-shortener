@@ -27,6 +27,19 @@ go.work.sum
 # env file
 .env
 
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+
+# Docker
+.dockerignore
+
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# build artifacts
+bin/
