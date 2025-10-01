@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a URL shortener database backend project demonstrating Infrastructure as Code (IaC) practices. The project uses:
+This is a complete URL shortener service in Go demonstrating Infrastructure as Code (IaC) and production-ready development practices. The project uses:
 
+- **Go HTTP Service** with gin framework for REST API
 - **PostgreSQL** as the database (AWS RDS for production, Docker for local development)
+- **Redis** for caching and rate limiting (AWS ElastiCache for production, Docker for local)
 - **Terraform** for infrastructure provisioning
 - **Flyway** for database schema migrations
 - **Docker Compose** for local development environment
@@ -15,10 +17,11 @@ This is a URL shortener database backend project demonstrating Infrastructure as
 
 The project follows a layered approach:
 
-1. **Infrastructure Layer** (`terraform/`): AWS RDS instance, security groups, IAM roles, backup automation
-2. **Schema Layer** (`migrations/`): Flyway migration scripts managing database schema evolution
-3. **Local Development** (`docker-compose.yml`): Containerized PostgreSQL matching production version
-4. **Automation** (`scripts/`): Backup scripts and development environment setup
+1. **Application Layer** (`cmd/`, `internal/`): Go HTTP service with REST API handlers
+2. **Infrastructure Layer** (`terraform/`): AWS RDS, ElastiCache, security groups, IAM roles, backup automation
+3. **Schema Layer** (`migrations/`): Flyway migration scripts managing database schema evolution
+4. **Local Development** (`docker-compose.yml`): Containerized PostgreSQL, Redis, and Go app with hot reload
+5. **Automation** (`scripts/`, `Makefile`): Backup scripts, linting, testing, development environment setup
 
 Core database schema centers around a `urls` table with columns:
 - `id` (SERIAL PRIMARY KEY)

@@ -1,22 +1,28 @@
-# URL Shortener Database Backend
+# URL Shortener Service
 
-A toy project demonstrating Infrastructure as Code (IaC), backup strategy, schema migrations, and local development support for a simple URL shortener service.
+A production-minded TinyURL-style service in Go demonstrating Infrastructure as Code (IaC), caching strategies, rate limiting, schema migrations, and comprehensive developer experience.
 
 ## Project Overview
 
-This project implements a PostgreSQL database backend for a URL shortener service, showcasing modern DevOps practices including:
+This project implements a complete URL shortener service showcasing modern DevOps and software engineering practices:
 
-- **Infrastructure as Code (IaC)** with Terraform
+- **Go HTTP Service** with health, shorten, and resolve endpoints
+- **PostgreSQL Database** with Flyway migrations for schema management
+- **Redis Cache** for fast URL resolution and rate limiting
+- **Infrastructure as Code (IaC)** with Terraform for AWS deployment
+- **Comprehensive Developer Experience** with linting, testing, pre-commit hooks
+- **Local Development** support with Docker Compose
 - **Automated backup strategy** with cloud-native features
-- **Schema migrations** with Flyway
-- **Local development** support with Docker Compose
 
 ## Architecture
 
-- **Database**: PostgreSQL (AWS RDS or GCP Cloud SQL)
-- **Migration Tool**: Flyway
-- **Infrastructure**: Terraform
-- **Local Development**: Docker Compose
+- **Application**: Go HTTP service with gin framework
+- **Database**: PostgreSQL (AWS RDS for production, Docker for local)
+- **Cache**: Redis (AWS ElastiCache for production, Docker for local)
+- **Migration Tool**: Flyway for schema versioning
+- **Infrastructure**: Terraform for AWS resources
+- **Local Development**: Docker Compose with hot reload
+- **Rate Limiting**: Redis-backed sliding window rate limiter
 - **Backup Strategy**: Daily automated backups with 7-day retention + manual backup scripts
 
 ## Implementation Guide
