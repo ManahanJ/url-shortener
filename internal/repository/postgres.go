@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jonmanahan/url-shortener/internal/models"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 type PostgresDB struct {
