@@ -43,3 +43,6 @@ go.work.sum
 
 # build artifacts
 bin/
+
+# build artifacts
+*.zip
