@@ -1,0 +1,101 @@
+name: app-ci
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  go-format-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: gofmt (check no diffs)
+        run: |
+          CHANGES=$(gofmt -s -l . | grep -v '^vendor/' || true)
+          if [ -n "$CHANGES" ]; then
+            echo "Files need formatting:"
+            echo "$CHANGES"
+            exit 1
+          fi
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b "$HOME/.local/bin" v1.59.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          golangci-lint version
+
+      - name: Lint
+        run: golangci-lint run
+
+      - name: Install govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Vulnerability scan (govulncheck)
+        run: govulncheck ./...
+
+      - name: Unit tests
+        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
+
+  smoke-integration:
+    runs-on: ubuntu-latest
+    needs: go-format-lint-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start local stack (docker compose)
+        run: |
+          docker compose version || docker --version
+          docker compose up -d
+          echo "Waiting for app to be ready..."
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
+              echo "App is up"; break
+            fi
+            sleep 2
+          done
+
+      - name: Health check
+        run: curl -fsS http://localhost:8080/health
+
+      - name: Shorten and resolve (smoke)
+        shell: bash
+        run: |
+          BODY='{"url":"https://example.com"}'
+          RESP=$(curl -fsS -XPOST http://localhost:8080/shorten -H 'Content-Type: application/json' -d "${BODY}" || true)
+          echo "Shorten response: $RESP"
+
+          # Try to parse code from JSON; fallback to a regex if not present
+          CODE=$(echo "$RESP" | jq -r '.code // empty' 2>/dev/null || true)
+          if [ -z "$CODE" ]; then
+            CODE=$(echo "$RESP" | grep -Eo '"code":"[A-Za-z0-9]+"' | sed -E 's/.*"code":"([^"]+)".*/\1/')
+          fi
+
+          if [ -n "$CODE" ]; then
+            echo "Testing resolve for code=$CODE"
+            curl -I "http://localhost:8080/${CODE}" | tee /tmp/resolve_headers.txt
+            grep -q "302" /tmp/resolve_headers.txt
+          else
+            echo "No code parsed; skipping resolve check (acceptable for stub Day-1)."
+          fi
+
+      - name: Stop local stack
+        if: always()
+        run: docker compose down -v

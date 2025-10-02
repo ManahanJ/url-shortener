@@ -1,0 +1,35 @@
+name: nightly-backup-verify
+
+on:
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup-verify:
+    runs-on: ubuntu-latest
+    # Do not block PRs - this is a monitoring job
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Backup Verification
+        env:
+          # These secrets need to be configured in GitHub Actions
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DB_IDENTIFIER: ${{ secrets.DB_IDENTIFIER }}
+        run: |
+          echo "Running backup verification..."
+          # TODO: Implement backup verification script
+          # This should call scripts/restore_verify.sh when implemented
+          echo "Backup verification placeholder - see runbooks for setup instructions"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "Backup verification failed - check logs and alerts"
+          # TODO: Add notification mechanism (Slack, email, etc.)

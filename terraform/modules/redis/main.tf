@@ -99,8 +99,8 @@ resource "aws_elasticache_parameter_group" "main" {
 
 # Redis replication group with encryption
 resource "aws_elasticache_replication_group" "main" {
-  replication_group_id       = "${var.environment}-redis"
-  description                = "Redis cluster for ${var.environment} environment"
+  replication_group_id = "${var.environment}-redis"
+  description          = "Redis cluster for ${var.environment} environment"
 
   # Redis configuration
   node_type            = var.node_type
@@ -112,7 +112,7 @@ resource "aws_elasticache_replication_group" "main" {
 
   # Multi-AZ for production
   automatic_failover_enabled = var.environment == "prod" ? true : false
-  multi_az_enabled          = var.environment == "prod" ? true : false
+  multi_az_enabled           = var.environment == "prod" ? true : false
 
   # Network configuration - PRIVATE ONLY
   subnet_group_name  = aws_elasticache_subnet_group.main.name
@@ -129,8 +129,8 @@ resource "aws_elasticache_replication_group" "main" {
 
   # Backup configuration
   snapshot_retention_limit = var.backup_retention_days
-  snapshot_window         = var.backup_window
-  maintenance_window      = var.maintenance_window
+  snapshot_window          = var.backup_window
+  maintenance_window       = var.maintenance_window
 
   # Logging
   log_delivery_configuration {
@@ -144,7 +144,7 @@ resource "aws_elasticache_replication_group" "main" {
   notification_topic_arn = aws_sns_topic.redis_alerts.arn
 
   # Engine version and updates
-  engine_version       = "7.0"
+  engine_version             = "7.0"
   auto_minor_version_upgrade = true
 
   tags = merge(var.common_tags, {

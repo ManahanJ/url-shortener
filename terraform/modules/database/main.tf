@@ -109,8 +109,8 @@ resource "aws_db_instance" "main" {
   allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_allocated_storage * 2
   storage_encrypted     = true
-  kms_key_id           = aws_kms_key.rds.arn
-  storage_type         = "gp3"
+  kms_key_id            = aws_kms_key.rds.arn
+  storage_type          = "gp3"
 
   # Database configuration
   db_name  = var.db_name
@@ -124,20 +124,20 @@ resource "aws_db_instance" "main" {
 
   # Backup configuration - Daily with 7-day retention
   backup_retention_period = 7
-  backup_window          = "03:00-04:00" # UTC - 11 PM EST
-  maintenance_window     = "Sun:04:00-Sun:05:00"
-  copy_tags_to_snapshot  = true
+  backup_window           = "03:00-04:00" # UTC - 11 PM EST
+  maintenance_window      = "Sun:04:00-Sun:05:00"
+  copy_tags_to_snapshot   = true
 
   # Enhanced monitoring and performance insights
-  monitoring_interval             = 60
-  monitoring_role_arn            = aws_iam_role.rds_monitoring.arn
-  performance_insights_enabled   = true
+  monitoring_interval                   = 60
+  monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
+  performance_insights_enabled          = true
   performance_insights_retention_period = 7
 
   # Security and compliance
-  parameter_group_name = aws_db_parameter_group.main.name
-  deletion_protection  = var.environment == "prod" ? true : false
-  skip_final_snapshot  = var.environment == "prod" ? false : true
+  parameter_group_name      = aws_db_parameter_group.main.name
+  deletion_protection       = var.environment == "prod" ? true : false
+  skip_final_snapshot       = var.environment == "prod" ? false : true
   final_snapshot_identifier = var.environment == "prod" ? "${var.environment}-${var.db_name}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
 
   # Logging
@@ -192,12 +192,12 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
 
 # Backup verification Lambda function
 resource "aws_lambda_function" "backup_verify" {
-  filename         = "${path.module}/backup_verify.zip"
-  function_name    = "${var.environment}-backup-verify"
-  role            = aws_iam_role.backup_verify_lambda.arn
-  handler         = "index.handler"
-  runtime         = "python3.11"
-  timeout         = 300
+  filename      = "${path.module}/backup_verify.zip"
+  function_name = "${var.environment}-backup-verify"
+  role          = aws_iam_role.backup_verify_lambda.arn
+  handler       = "index.handler"
+  runtime       = "python3.11"
+  timeout       = 300
 
   environment {
     variables = {

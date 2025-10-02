@@ -50,7 +50,7 @@ run: ## Run the application locally (requires services)
 	go run cmd/server/main.go
 
 test: ## Run tests
-	go test -v ./...
+	go test ./... -race -coverprofile=coverage.out -covermode=atomic
 
 test-coverage: ## Run tests with coverage
 	go test -v -coverprofile=coverage.out ./...
@@ -61,8 +61,7 @@ lint: ## Run golangci-lint
 	golangci-lint run
 
 fmt: ## Format Go code
-	go fmt ./...
-	goimports -w .
+	@gofmt -s -l . | grep -v '^vendor/' | tee /dev/stderr | (! grep .) || (echo "Run: gofmt -s -w <files>"; exit 1)
 
 vet: ## Run go vet
 	go vet ./...
@@ -73,6 +72,13 @@ docker-build: ## Build Docker image
 
 docker-run: ## Run application in Docker
 	docker run -p 8080:8080 --env-file .env url-shortener:latest
+
+## CI Targets
+ci-app: fmt lint test ## Run app CI checks locally
+
+ci-iac: ## Run infrastructure CI checks locally
+	cd terraform && terraform fmt -recursive -check
+	cd terraform/envs/dev && terraform init -backend=false && terraform validate && terraform plan -out=plan.tfplan -lock=false -input=false
 
 ## Quality Gates
 quality: deps fmt vet lint test ## Run all quality checks

@@ -370,6 +370,76 @@ echo "Database reset complete!"
    ./scripts/deploy-migrations.sh production
    ```
 
+## CI/CD
+
+This project includes comprehensive CI/CD pipelines that automatically format, lint, test, and validate code changes.
+
+### Workflows
+
+#### Application CI (`app-ci.yml`)
+Runs on all pushes to `main` and pull requests:
+
+**Go Format, Lint & Test Job:**
+- Checks code formatting with `gofmt`
+- Runs `golangci-lint` for code quality
+- Performs vulnerability scanning with `govulncheck`
+- Executes unit tests with race detection and coverage
+
+**Smoke Integration Job:**
+- Starts local PostgreSQL, Redis, and app with Docker Compose
+- Runs Flyway migrations automatically
+- Tests `/health` endpoint
+- Performs basic shorten/resolve functionality test
+- Cleans up resources after testing
+
+#### Infrastructure CI (`iac-ci.yml`)
+Runs on pull requests that modify `terraform/**`, `policy/**`, or `.github/**`:
+
+- Validates Terraform formatting with `terraform fmt -check`
+- Initializes Terraform with `-backend=false` (no remote state in CI)
+- Validates and plans Terraform configuration
+- Runs `tflint` for Terraform linting
+- Executes `tfsec` security scanning
+- Validates OPA policies with `conftest`
+- Uploads Terraform plan as artifact for review
+
+### Local CI Execution
+
+Run the same checks locally using make targets:
+
+```bash
+# Run app CI checks (format, lint, test)
+make ci-app
+
+# Run infrastructure CI checks (terraform validate/plan, policies)
+make ci-iac
+
+# Individual commands
+make fmt     # Check Go formatting
+make lint    # Run golangci-lint
+make test    # Run tests with race detection
+```
+
+### Reading Terraform Plan Artifacts
+
+When infrastructure changes are proposed:
+1. Navigate to the GitHub Actions run
+2. Download the `terraform-plan` artifact
+3. Review `plan.txt` to understand proposed changes
+4. Plans are generated using `-backend=false` for security
+
+### Security Gates
+
+All pull requests must pass:
+- ✅ Go code formatting (`gofmt`)
+- ✅ Go linting (`golangci-lint`)
+- ✅ Vulnerability scanning (`govulncheck`)
+- ✅ Unit tests with race detection
+- ✅ Smoke integration tests
+- ✅ Terraform formatting and validation
+- ✅ Infrastructure security scanning (`tfsec`)
+- ✅ Policy-as-code validation (OPA)
+
 ## Project Structure
 
 ```

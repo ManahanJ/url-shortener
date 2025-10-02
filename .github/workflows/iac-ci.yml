@@ -1,0 +1,55 @@
+name: iac-ci
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - "policy/**"
+      - ".github/**"
+
+jobs:
+  iac-validate-plan-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform fmt
+        run: terraform fmt -recursive -check
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init/validate/plan (dev env)
+        working-directory: terraform/envs/dev
+        run: |
+          terraform init -backend=false
+          terraform validate
+          terraform plan -out=plan.tfplan -lock=false -input=false
+          terraform show -no-color plan.tfplan > plan.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: terraform/envs/dev/plan.txt
+
+      - name: Install tflint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          echo "$PWD/bin" >> $GITHUB_PATH
+
+      - name: tflint
+        working-directory: terraform
+        run: tflint
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: false
+
+      - name: Install conftest
+        run: |
+          curl -L https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: OPA (conftest) against Terraform config
+        run: conftest test -p policy/opa/ terraform/
